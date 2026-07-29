@@ -1,4 +1,4 @@
-package com.example.helpdeskbackend;
+package com.saidelatmioui.helpdesk;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
