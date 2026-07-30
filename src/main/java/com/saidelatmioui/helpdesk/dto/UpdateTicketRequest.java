@@ -3,10 +3,9 @@ package com.saidelatmioui.helpdesk.dto;
 import com.saidelatmioui.helpdesk.entity.TicketPriority;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
-public class CreateTicketRequest {
+public class UpdateTicketRequest {
 
     @NotBlank(message = "Title is required")
     @Size(
@@ -27,11 +26,7 @@ public class CreateTicketRequest {
     @NotNull(message = "Priority is required")
     private TicketPriority priority;
 
-    @NotNull(message = "Customer ID is required")
-    @Positive(message = "Customer ID must be greater than zero")
-    private Long customerId;
-
-    public CreateTicketRequest() {
+    public UpdateTicketRequest() {
     }
 
     public String getTitle() {
@@ -56,13 +51,5 @@ public class CreateTicketRequest {
 
     public void setPriority(TicketPriority priority) {
         this.priority = priority;
-    }
-
-    public Long getCustomerId() {
-        return customerId;
-    }
-
-    public void setCustomerId(Long customerId) {
-        this.customerId = customerId;
     }
 }

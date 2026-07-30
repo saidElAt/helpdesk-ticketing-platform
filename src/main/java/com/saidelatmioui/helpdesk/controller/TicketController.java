@@ -1,9 +1,13 @@
 package com.saidelatmioui.helpdesk.controller;
 
+import com.saidelatmioui.helpdesk.dto.ChangeTicketStatusRequest;
 import com.saidelatmioui.helpdesk.dto.CreateTicketRequest;
 import com.saidelatmioui.helpdesk.dto.TicketResponse;
+import com.saidelatmioui.helpdesk.dto.UpdateTicketRequest;
 import com.saidelatmioui.helpdesk.service.TicketService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,24 +23,66 @@ public class TicketController {
     }
 
     @GetMapping
-    public List<TicketResponse> getAllTickets() {
-        return ticketService.getAllTickets();
+    public ResponseEntity<List<TicketResponse>> getAllTickets() {
+        return ResponseEntity.ok(
+                ticketService.getAllTickets()
+        );
     }
 
     @GetMapping("/{id}")
-    public TicketResponse getTicketById(@PathVariable Long id) {
-        return ticketService.getTicketById(id);
+    public ResponseEntity<TicketResponse> getTicketById(
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(
+                ticketService.getTicketById(id)
+        );
     }
 
     @PostMapping
-    public TicketResponse createTicket(
+    public ResponseEntity<TicketResponse> createTicket(
             @Valid @RequestBody CreateTicketRequest request
     ) {
-        return ticketService.createTicket(request);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ticketService.createTicket(request));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<TicketResponse> updateTicket(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateTicketRequest request
+    ) {
+        return ResponseEntity.ok(
+                ticketService.updateTicket(id, request)
+        );
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<TicketResponse> changeTicketStatus(
+            @PathVariable Long id,
+            @Valid @RequestBody ChangeTicketStatusRequest request
+    ) {
+        return ResponseEntity.ok(
+                ticketService.changeTicketStatus(id, request)
+        );
+    }
+
+    @PatchMapping("/{ticketId}/assign/{agentId}")
+    public ResponseEntity<TicketResponse> assignTicket(
+            @PathVariable Long ticketId,
+            @PathVariable Long agentId
+    ) {
+        return ResponseEntity.ok(
+                ticketService.assignTicket(ticketId, agentId)
+        );
     }
 
     @DeleteMapping("/{id}")
-    public void deleteTicket(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteTicket(
+            @PathVariable Long id
+    ) {
         ticketService.deleteTicket(id);
+
+        return ResponseEntity.noContent().build();
     }
 }
