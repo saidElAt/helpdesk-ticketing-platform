@@ -1,6 +1,7 @@
 package com.saidelatmioui.helpdesk.entity;
 
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -37,6 +38,26 @@ public class User {
     private LocalDateTime updatedAt;
 
     public User() {
+    }
+
+    @PrePersist
+    public void prePersist() {
+        LocalDateTime now = LocalDateTime.now();
+
+        if (createdAt == null) {
+            createdAt = now;
+        }
+
+        updatedAt = now;
+
+        if (enabled == null) {
+            enabled = true;
+        }
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
     public Long getId() {

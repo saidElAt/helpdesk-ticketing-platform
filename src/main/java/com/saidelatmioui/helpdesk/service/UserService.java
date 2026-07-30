@@ -2,8 +2,10 @@ package com.saidelatmioui.helpdesk.service;
 
 import com.saidelatmioui.helpdesk.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional(readOnly = true)
 public class UserService {
 
     private final UserRepository userRepository;
@@ -13,6 +15,12 @@ public class UserService {
     }
 
     public boolean emailExists(String email) {
-        return userRepository.findByEmail(email).isPresent();
+        if (email == null || email.isBlank()) {
+            return false;
+        }
+
+        return userRepository.existsByEmailIgnoreCase(
+                email.trim()
+        );
     }
 }

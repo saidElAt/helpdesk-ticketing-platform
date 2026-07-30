@@ -1,220 +1,43 @@
 @baseUrl = http://localhost:8080
 
-### ============================================================================
-### TICKETS API - PHASE 5 TESTS
-### Credentials:
-### Username: user
-### Password: helpdesk123
-### ============================================================================
+### Login as customer and save JWT automatically
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+Accept: application/json
 
-### Get all tickets
+{
+  "email": "john.customer@example.com",
+  "password": "Helpdesk123!"
+}
 
+> {%
+    client.test("Login succeeded", function () {
+        client.assert(
+            response.status === 200,
+            "Expected HTTP 200 but received " + response.status
+        );
+
+        client.assert(
+            response.body.token,
+            "The login response does not contain a token"
+        );
+    });
+
+    client.global.set("auth_token", response.body.token);
+%}
+
+###
+
+### Get all tickets using the saved JWT
 GET {{baseUrl}}/tickets
-Authorization: Basic user helpdesk123
+Authorization: Bearer {{auth_token}}
 Accept: application/json
 
-
-### Create a valid ticket
-### Save the returned ID and replace TICKET_ID below.
-
-POST {{baseUrl}}/tickets
-Authorization: Basic user helpdesk123
-Content-Type: application/json
-Accept: application/json
-
-{
-  "title": "Unable to reset account password",
-  "description": "The password reset email does not arrive in my inbox.",
-  "priority": "HIGH",
-  "customerId": 1
-}
-
-
-### Get existing ticket
-
-GET {{baseUrl}}/tickets/TICKET_ID
-Authorization: Basic user helpdesk123
-Accept: application/json
-
-
-### Get non-existent ticket
-
-GET {{baseUrl}}/tickets/999
-Authorization: Basic user helpdesk123
-Accept: application/json
-
-
-### Create ticket with missing fields
-
-POST {{baseUrl}}/tickets
-Authorization: Basic user helpdesk123
-Content-Type: application/json
-Accept: application/json
-
-{
-  "title": "",
-  "description": "",
-  "priority": null,
-  "customerId": null
-}
-
-
-### Create ticket with invalid priority
-
-POST {{baseUrl}}/tickets
-Authorization: Basic user helpdesk123
-Content-Type: application/json
-Accept: application/json
-
-{
-  "title": "Unable to access my account",
-  "description": "The system rejects my account credentials.",
-  "priority": "URGENT",
-  "customerId": 1
-}
-
-
-### Create ticket for non-existent customer
-
-POST {{baseUrl}}/tickets
-Authorization: Basic user helpdesk123
-Content-Type: application/json
-Accept: application/json
-
-{
-  "title": "Unable to access the customer portal",
-  "description": "The customer portal displays an error after signing in.",
-  "priority": "MEDIUM",
-  "customerId": 999
-}
-
-
-### Update existing ticket
-
-PUT {{baseUrl}}/tickets/TICKET_ID
-Authorization: Basic user helpdesk123
-Content-Type: application/json
-Accept: application/json
-
-{
-  "title": "Account access problem resolved partially",
-  "description": "I can now sign in, but some account pages remain unavailable.",
-  "priority": "MEDIUM"
-}
-
-
-### Update ticket with invalid data
-
-PUT {{baseUrl}}/tickets/TICKET_ID
-Authorization: Basic user helpdesk123
-Content-Type: application/json
-Accept: application/json
-
-{
-  "title": "",
-  "description": "Short",
-  "priority": null
-}
-
-
-### Update non-existent ticket
-
-PUT {{baseUrl}}/tickets/999
-Authorization: Basic user helpdesk123
-Content-Type: application/json
-Accept: application/json
-
-{
-  "title": "Updated helpdesk ticket title",
-  "description": "This update should fail because the ticket does not exist.",
-  "priority": "LOW"
-}
-
-
-### Change ticket status to IN_PROGRESS
-
-PATCH {{baseUrl}}/tickets/TICKET_ID/status
-Authorization: Basic user helpdesk123
-Content-Type: application/json
-Accept: application/json
-
-{
-  "status": "IN_PROGRESS"
-}
-
-
-### Change ticket status to RESOLVED
-
-PATCH {{baseUrl}}/tickets/TICKET_ID/status
-Authorization: Basic user helpdesk123
-Content-Type: application/json
-Accept: application/json
-
-{
-  "status": "RESOLVED"
-}
-
-
-### Change ticket status with invalid value
-
-PATCH {{baseUrl}}/tickets/TICKET_ID/status
-Authorization: Basic user helpdesk123
-Content-Type: application/json
-Accept: application/json
-
-{
-  "status": "PENDING"
-}
-
-
-### Change status of non-existent ticket
-
-PATCH {{baseUrl}}/tickets/999/status
-Authorization: Basic user helpdesk123
-Content-Type: application/json
-Accept: application/json
-
-{
-  "status": "CLOSED"
-}
-
-
-### Assign ticket to existing AGENT
-### Agent ID = 2
-
-PATCH {{baseUrl}}/tickets/TICKET_ID/assign/2
-Authorization: Basic user helpdesk123
-Accept: application/json
-
-
-### Assign ticket to non-existent user
-
-PATCH {{baseUrl}}/tickets/TICKET_ID/assign/999
-Authorization: Basic user helpdesk123
-Accept: application/json
-
-
-### Assign non-existent ticket
-
-PATCH {{baseUrl}}/tickets/999/assign/2
-Authorization: Basic user helpdesk123
-Accept: application/json
-
-
-### Delete existing ticket
-
-DELETE {{baseUrl}}/tickets/TICKET_ID
-Authorization: Basic user helpdesk123
-
-
-### Verify ticket was deleted
-
-GET {{baseUrl}}/tickets/TICKET_ID
-Authorization: Basic user helpdesk123
-Accept: application/json
-
-
-### Delete non-existent ticket
-
-DELETE {{baseUrl}}/tickets/999
-Authorization: Basic user helpdesk123
+> {%
+    client.test("Authenticated ticket request succeeded", function () {
+        client.assert(
+            response.status === 200,
+            "Expected HTTP 200 but received " + response.status
+        );
+    });
+%}
