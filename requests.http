@@ -49,25 +49,42 @@ Accept: application/json
 
 > {%
     client.global.set("adminToken", response.body.token);
+    client.global.set("adminId", response.body.userId);
 %}
+
 
 
 ### ============================================================================
 ### CATEGORIES
 ### ============================================================================
 
-### Get enabled categories
+### Get Categories
+
 GET {{baseUrl}}/categories
 Authorization: Bearer {{customerToken}}
 Accept: application/json
+
 
 
 ### ============================================================================
 ### TICKETS
 ### ============================================================================
 
-### Create ticket with category
-### Replace categoryId if necessary after checking GET /categories
+### Get all tickets
+
+GET {{baseUrl}}/tickets
+Authorization: Bearer {{customerToken}}
+Accept: application/json
+
+
+### Get ticket by id
+
+GET {{baseUrl}}/tickets/4
+Authorization: Bearer {{customerToken}}
+Accept: application/json
+
+
+### Create ticket
 
 POST {{baseUrl}}/tickets
 Authorization: Bearer {{customerToken}}
@@ -78,7 +95,7 @@ Accept: application/json
   "title": "Unable to access customer account",
   "description": "The account login page rejects the customer's valid credentials.",
   "priority": "HIGH",
-  "customerId": {{customerId}},
+  "customerId": 1,
   "categoryId": 1
 }
 
@@ -87,16 +104,61 @@ Accept: application/json
 %}
 
 
-### Get created ticket
-GET {{baseUrl}}/tickets/{{ticketId}}
+### Create invalid ticket
+
+POST {{baseUrl}}/tickets
 Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "",
+  "description": "",
+  "priority": null,
+  "customerId": null,
+  "categoryId": null
+}
+
+
+### Update ticket
+
+PUT {{baseUrl}}/tickets/4
+Authorization: Bearer {{agentToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Updated account access issue",
+  "description": "Customer still cannot access the account after password reset.",
+  "priority": "MEDIUM"
+}
+
+
+### Assign ticket
+
+PATCH {{baseUrl}}/tickets/4/assign/2
+Authorization: Bearer {{adminToken}}
 Accept: application/json
 
 
-### Get all tickets
-GET {{baseUrl}}/tickets
+### Change ticket status
+
+PATCH {{baseUrl}}/tickets/4/status
+Authorization: Bearer {{agentToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "status": "RESOLVED"
+}
+
+
+### Get ticket after changes
+
+GET {{baseUrl}}/tickets/4
 Authorization: Bearer {{customerToken}}
 Accept: application/json
+
 
 
 ### ============================================================================
@@ -104,59 +166,52 @@ Accept: application/json
 ### ============================================================================
 
 ### Create customer comment
-POST {{baseUrl}}/tickets/{{ticketId}}/comments
+
+POST {{baseUrl}}/tickets/4/comments
 Authorization: Bearer {{customerToken}}
 Content-Type: application/json
 Accept: application/json
 
 {
-  "authorId": {{customerId}},
+  "authorId": 1,
   "content": "I still cannot access my account after resetting the password."
 }
 
-> {%
-    client.global.set("customerCommentId", response.body.id);
-%}
-
 
 ### Create agent comment
-POST {{baseUrl}}/tickets/{{ticketId}}/comments
+
+POST {{baseUrl}}/tickets/4/comments
 Authorization: Bearer {{agentToken}}
 Content-Type: application/json
 Accept: application/json
 
 {
-  "authorId": {{agentId}},
+  "authorId": 2,
   "content": "I am investigating the authentication logs and account configuration."
 }
 
-> {%
-    client.global.set("agentCommentId", response.body.id);
-%}
 
+### Get comments
 
-### Get comments for ticket
-GET {{baseUrl}}/tickets/{{ticketId}}/comments
+GET {{baseUrl}}/tickets/4/comments
 Authorization: Bearer {{customerToken}}
 Accept: application/json
 
 
-### Create comment with missing content
-### Expected: 400
+### Create invalid comment
 
-POST {{baseUrl}}/tickets/{{ticketId}}/comments
+POST {{baseUrl}}/tickets/4/comments
 Authorization: Bearer {{customerToken}}
 Content-Type: application/json
 Accept: application/json
 
 {
-  "authorId": {{customerId}},
+  "authorId": 1,
   "content": ""
 }
 
 
-### Create comment for non-existent ticket
-### Expected: 404
+### Create comment on non-existent ticket
 
 POST {{baseUrl}}/tickets/999/comments
 Authorization: Bearer {{customerToken}}
@@ -164,14 +219,59 @@ Content-Type: application/json
 Accept: application/json
 
 {
-  "authorId": {{customerId}},
-  "content": "This comment should fail because the ticket does not exist."
+  "authorId": 1,
+  "content": "This should fail."
 }
 
 
-### Get comments for non-existent ticket
-### Expected: 404
 
-GET {{baseUrl}}/tickets/999/comments
+### ============================================================================
+### STATUS HISTORY
+### ============================================================================
+
+### Change ticket to IN_PROGRESS
+
+PATCH {{baseUrl}}/tickets/4/status
+Authorization: Bearer {{agentToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "status": "IN_PROGRESS"
+}
+
+
+### Change ticket to RESOLVED
+
+PATCH {{baseUrl}}/tickets/4/status
+Authorization: Bearer {{agentToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "status": "RESOLVED"
+}
+
+
+### Get ticket status history
+
+GET {{baseUrl}}/tickets/4/history
 Authorization: Bearer {{customerToken}}
 Accept: application/json
+
+
+
+### ============================================================================
+### DELETE
+### ============================================================================
+
+### Delete ticket
+
+DELETE {{baseUrl}}/tickets/4
+Authorization: Bearer {{adminToken}}
+
+
+### Delete non-existent ticket
+
+DELETE {{baseUrl}}/tickets/999
+Authorization: Bearer {{adminToken}}

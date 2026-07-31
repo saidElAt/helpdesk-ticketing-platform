@@ -27,15 +27,18 @@ public class TicketService {
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final TicketStatusHistoryService historyService;
 
     public TicketService(
             TicketRepository ticketRepository,
             UserRepository userRepository,
-            CategoryRepository categoryRepository
+            CategoryRepository categoryRepository,
+            TicketStatusHistoryService historyService
     ) {
         this.ticketRepository = ticketRepository;
         this.userRepository = userRepository;
         this.categoryRepository = categoryRepository;
+        this.historyService = historyService;
     }
 
     @Transactional(readOnly = true)
@@ -82,7 +85,16 @@ public class TicketService {
         ticket.setCustomer(customer);
         ticket.setCategory(category);
 
-        return toResponse(ticketRepository.save(ticket));
+        Ticket savedTicket = ticketRepository.save(ticket);
+
+        historyService.recordStatusChange(
+                savedTicket,
+                null,
+                TicketStatus.OPEN,
+                customer.getEmail()
+        );
+
+        return toResponse(savedTicket);
     }
 
     public TicketResponse updateTicket(
@@ -100,18 +112,35 @@ public class TicketService {
 
     public TicketResponse changeTicketStatus(
             Long id,
-            ChangeTicketStatusRequest request
+            ChangeTicketStatusRequest request,
+            String changedByEmail
     ) {
         Ticket ticket = findTicketById(id);
+        TicketStatus oldStatus = ticket.getStatus();
+        TicketStatus newStatus = request.getStatus();
 
-        ticket.setStatus(request.getStatus());
+        if (oldStatus == newStatus) {
+            return toResponse(ticket);
+        }
 
-        return toResponse(ticketRepository.save(ticket));
+        ticket.setStatus(newStatus);
+
+        Ticket savedTicket = ticketRepository.save(ticket);
+
+        historyService.recordStatusChange(
+                savedTicket,
+                oldStatus,
+                newStatus,
+                changedByEmail
+        );
+
+        return toResponse(savedTicket);
     }
 
     public TicketResponse assignTicket(
             Long ticketId,
-            Long agentId
+            Long agentId,
+            String changedByEmail
     ) {
         Ticket ticket = findTicketById(ticketId);
 
@@ -124,11 +153,24 @@ public class TicketService {
 
         ticket.setAssignedAgent(agent);
 
-        if (ticket.getStatus() == TicketStatus.OPEN) {
+        TicketStatus oldStatus = ticket.getStatus();
+
+        if (oldStatus == TicketStatus.OPEN) {
             ticket.setStatus(TicketStatus.IN_PROGRESS);
         }
 
-        return toResponse(ticketRepository.save(ticket));
+        Ticket savedTicket = ticketRepository.save(ticket);
+
+        if (oldStatus != savedTicket.getStatus()) {
+            historyService.recordStatusChange(
+                    savedTicket,
+                    oldStatus,
+                    savedTicket.getStatus(),
+                    changedByEmail
+            );
+        }
+
+        return toResponse(savedTicket);
     }
 
     public void deleteTicket(Long id) {

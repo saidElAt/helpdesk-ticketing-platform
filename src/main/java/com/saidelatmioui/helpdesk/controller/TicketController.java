@@ -8,6 +8,7 @@ import com.saidelatmioui.helpdesk.service.TicketService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,7 +19,9 @@ public class TicketController {
 
     private final TicketService ticketService;
 
-    public TicketController(TicketService ticketService) {
+    public TicketController(
+            TicketService ticketService
+    ) {
         this.ticketService = ticketService;
     }
 
@@ -44,7 +47,9 @@ public class TicketController {
     ) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(ticketService.createTicket(request));
+                .body(
+                        ticketService.createTicket(request)
+                );
     }
 
     @PutMapping("/{id}")
@@ -60,20 +65,30 @@ public class TicketController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<TicketResponse> changeTicketStatus(
             @PathVariable Long id,
-            @Valid @RequestBody ChangeTicketStatusRequest request
+            @Valid @RequestBody ChangeTicketStatusRequest request,
+            Authentication authentication
     ) {
         return ResponseEntity.ok(
-                ticketService.changeTicketStatus(id, request)
+                ticketService.changeTicketStatus(
+                        id,
+                        request,
+                        authentication.getName()
+                )
         );
     }
 
     @PatchMapping("/{ticketId}/assign/{agentId}")
     public ResponseEntity<TicketResponse> assignTicket(
             @PathVariable Long ticketId,
-            @PathVariable Long agentId
+            @PathVariable Long agentId,
+            Authentication authentication
     ) {
         return ResponseEntity.ok(
-                ticketService.assignTicket(ticketId, agentId)
+                ticketService.assignTicket(
+                        ticketId,
+                        agentId,
+                        authentication.getName()
+                )
         );
     }
 
