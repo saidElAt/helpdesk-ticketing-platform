@@ -1,43 +1,177 @@
 @baseUrl = http://localhost:8080
+@password = Helpdesk123!
 
-### Login as customer and save JWT automatically
+### ============================================================================
+### LOGIN
+### ============================================================================
+
+### Login as CUSTOMER
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 Accept: application/json
 
 {
   "email": "john.customer@example.com",
-  "password": "Helpdesk123!"
+  "password": "{{password}}"
 }
 
 > {%
-    client.test("Login succeeded", function () {
-        client.assert(
-            response.status === 200,
-            "Expected HTTP 200 but received " + response.status
-        );
-
-        client.assert(
-            response.body.token,
-            "The login response does not contain a token"
-        );
-    });
-
-    client.global.set("auth_token", response.body.token);
+    client.global.set("customerToken", response.body.token);
+    client.global.set("customerId", response.body.userId);
 %}
 
-###
 
-### Get all tickets using the saved JWT
-GET {{baseUrl}}/tickets
-Authorization: Bearer {{auth_token}}
+### Login as AGENT
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
 Accept: application/json
 
+{
+  "email": "alice.agent@example.com",
+  "password": "{{password}}"
+}
+
 > {%
-    client.test("Authenticated ticket request succeeded", function () {
-        client.assert(
-            response.status === 200,
-            "Expected HTTP 200 but received " + response.status
-        );
-    });
+    client.global.set("agentToken", response.body.token);
+    client.global.set("agentId", response.body.userId);
 %}
+
+
+### Login as ADMIN
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "{{password}}"
+}
+
+> {%
+    client.global.set("adminToken", response.body.token);
+%}
+
+
+### ============================================================================
+### CATEGORIES
+### ============================================================================
+
+### Get enabled categories
+GET {{baseUrl}}/categories
+Authorization: Bearer {{customerToken}}
+Accept: application/json
+
+
+### ============================================================================
+### TICKETS
+### ============================================================================
+
+### Create ticket with category
+### Replace categoryId if necessary after checking GET /categories
+
+POST {{baseUrl}}/tickets
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Unable to access customer account",
+  "description": "The account login page rejects the customer's valid credentials.",
+  "priority": "HIGH",
+  "customerId": {{customerId}},
+  "categoryId": 1
+}
+
+> {%
+    client.global.set("ticketId", response.body.id);
+%}
+
+
+### Get created ticket
+GET {{baseUrl}}/tickets/{{ticketId}}
+Authorization: Bearer {{customerToken}}
+Accept: application/json
+
+
+### Get all tickets
+GET {{baseUrl}}/tickets
+Authorization: Bearer {{customerToken}}
+Accept: application/json
+
+
+### ============================================================================
+### COMMENTS
+### ============================================================================
+
+### Create customer comment
+POST {{baseUrl}}/tickets/{{ticketId}}/comments
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "authorId": {{customerId}},
+  "content": "I still cannot access my account after resetting the password."
+}
+
+> {%
+    client.global.set("customerCommentId", response.body.id);
+%}
+
+
+### Create agent comment
+POST {{baseUrl}}/tickets/{{ticketId}}/comments
+Authorization: Bearer {{agentToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "authorId": {{agentId}},
+  "content": "I am investigating the authentication logs and account configuration."
+}
+
+> {%
+    client.global.set("agentCommentId", response.body.id);
+%}
+
+
+### Get comments for ticket
+GET {{baseUrl}}/tickets/{{ticketId}}/comments
+Authorization: Bearer {{customerToken}}
+Accept: application/json
+
+
+### Create comment with missing content
+### Expected: 400
+
+POST {{baseUrl}}/tickets/{{ticketId}}/comments
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "authorId": {{customerId}},
+  "content": ""
+}
+
+
+### Create comment for non-existent ticket
+### Expected: 404
+
+POST {{baseUrl}}/tickets/999/comments
+Authorization: Bearer {{customerToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "authorId": {{customerId}},
+  "content": "This comment should fail because the ticket does not exist."
+}
+
+
+### Get comments for non-existent ticket
+### Expected: 404
+
+GET {{baseUrl}}/tickets/999/comments
+Authorization: Bearer {{customerToken}}
+Accept: application/json

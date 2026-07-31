@@ -69,6 +69,33 @@ public class SecurityConfig {
                         ).permitAll()
 
                         .requestMatchers(
+                                HttpMethod.GET,
+                                "/categories"
+                        ).hasAnyRole(
+                                "CUSTOMER",
+                                "AGENT",
+                                "ADMIN"
+                        )
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/tickets/*/comments"
+                        ).hasAnyRole(
+                                "CUSTOMER",
+                                "AGENT",
+                                "ADMIN"
+                        )
+
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/tickets/*/comments"
+                        ).hasAnyRole(
+                                "CUSTOMER",
+                                "AGENT",
+                                "ADMIN"
+                        )
+
+                        .requestMatchers(
                                 HttpMethod.POST,
                                 "/tickets"
                         ).hasAnyRole(

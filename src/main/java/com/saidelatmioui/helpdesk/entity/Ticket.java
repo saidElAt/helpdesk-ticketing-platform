@@ -34,6 +34,10 @@ public class Ticket {
     @JoinColumn(name = "assigned_agent_id")
     private User assignedAgent;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -46,13 +50,13 @@ public class Ticket {
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
-        this.createdAt = now;
-        this.updatedAt = now;
+        createdAt = now;
+        updatedAt = now;
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -81,6 +85,10 @@ public class Ticket {
 
     public User getAssignedAgent() {
         return assignedAgent;
+    }
+
+    public Category getCategory() {
+        return category;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -113,5 +121,9 @@ public class Ticket {
 
     public void setAssignedAgent(User assignedAgent) {
         this.assignedAgent = assignedAgent;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
     }
 }

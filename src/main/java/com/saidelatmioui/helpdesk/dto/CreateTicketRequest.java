@@ -31,6 +31,10 @@ public class CreateTicketRequest {
     @Positive(message = "Customer ID must be greater than zero")
     private Long customerId;
 
+    @NotNull(message = "Category ID is required")
+    @Positive(message = "Category ID must be greater than zero")
+    private Long categoryId;
+
     public CreateTicketRequest() {
     }
 
@@ -64,5 +68,13 @@ public class CreateTicketRequest {
 
     public void setCustomerId(Long customerId) {
         this.customerId = customerId;
+    }
+
+    public Long getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(Long categoryId) {
+        this.categoryId = categoryId;
     }
 }

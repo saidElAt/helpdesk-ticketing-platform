@@ -4,11 +4,13 @@ import com.saidelatmioui.helpdesk.dto.ChangeTicketStatusRequest;
 import com.saidelatmioui.helpdesk.dto.CreateTicketRequest;
 import com.saidelatmioui.helpdesk.dto.TicketResponse;
 import com.saidelatmioui.helpdesk.dto.UpdateTicketRequest;
+import com.saidelatmioui.helpdesk.entity.Category;
 import com.saidelatmioui.helpdesk.entity.Ticket;
 import com.saidelatmioui.helpdesk.entity.TicketStatus;
 import com.saidelatmioui.helpdesk.entity.User;
 import com.saidelatmioui.helpdesk.exception.BadRequestException;
 import com.saidelatmioui.helpdesk.exception.ResourceNotFoundException;
+import com.saidelatmioui.helpdesk.repository.CategoryRepository;
 import com.saidelatmioui.helpdesk.repository.TicketRepository;
 import com.saidelatmioui.helpdesk.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -24,13 +26,16 @@ public class TicketService {
 
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
 
     public TicketService(
             TicketRepository ticketRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            CategoryRepository categoryRepository
     ) {
         this.ticketRepository = ticketRepository;
         this.userRepository = userRepository;
+        this.categoryRepository = categoryRepository;
     }
 
     @Transactional(readOnly = true)
@@ -54,12 +59,28 @@ public class TicketService {
                                 + " was not found"
                 ));
 
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Category with ID "
+                                + request.getCategoryId()
+                                + " was not found"
+                ));
+
+        if (!Boolean.TRUE.equals(category.getEnabled())) {
+            throw new BadRequestException(
+                    "Category with ID "
+                            + category.getId()
+                            + " is disabled"
+            );
+        }
+
         Ticket ticket = new Ticket();
         ticket.setTitle(request.getTitle().trim());
         ticket.setDescription(request.getDescription().trim());
         ticket.setPriority(request.getPriority());
         ticket.setStatus(TicketStatus.OPEN);
         ticket.setCustomer(customer);
+        ticket.setCategory(category);
 
         return toResponse(ticketRepository.save(ticket));
     }
@@ -127,14 +148,16 @@ public class TicketService {
                 || user.getRole().getName() == null
                 || !AGENT_ROLE.equalsIgnoreCase(user.getRole().getName())) {
             throw new BadRequestException(
-                    "User with ID " + user.getId()
+                    "User with ID "
+                            + user.getId()
                             + " cannot be assigned because the user is not an AGENT"
             );
         }
 
         if (!Boolean.TRUE.equals(user.getEnabled())) {
             throw new BadRequestException(
-                    "User with ID " + user.getId()
+                    "User with ID "
+                            + user.getId()
                             + " cannot be assigned because the user is disabled"
             );
         }
@@ -155,6 +178,9 @@ public class TicketService {
                     ticket.getAssignedAgent().getId()
             );
         }
+
+        response.setCategoryId(ticket.getCategory().getId());
+        response.setCategoryName(ticket.getCategory().getName());
 
         return response;
     }
