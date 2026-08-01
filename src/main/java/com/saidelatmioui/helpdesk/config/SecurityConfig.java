@@ -43,6 +43,7 @@ public class SecurityConfig {
     ) throws Exception {
 
         http
+                .cors(cors -> {})
                 .csrf(csrf -> csrf.disable())
 
                 .sessionManagement(session ->
@@ -254,27 +255,20 @@ public class SecurityConfig {
     }
 
     @Bean
-    public JwtAuthenticationConverter
-    jwtAuthenticationConverter() {
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
 
-        JwtGrantedAuthoritiesConverter
-                authoritiesConverter =
+        JwtGrantedAuthoritiesConverter authoritiesConverter =
                 new JwtGrantedAuthoritiesConverter();
 
-        authoritiesConverter
-                .setAuthoritiesClaimName("role");
+        authoritiesConverter.setAuthoritiesClaimName("role");
+        authoritiesConverter.setAuthorityPrefix("ROLE_");
 
-        authoritiesConverter
-                .setAuthorityPrefix("ROLE_");
-
-        JwtAuthenticationConverter
-                authenticationConverter =
+        JwtAuthenticationConverter authenticationConverter =
                 new JwtAuthenticationConverter();
 
-        authenticationConverter
-                .setJwtGrantedAuthoritiesConverter(
-                        authoritiesConverter
-                );
+        authenticationConverter.setJwtGrantedAuthoritiesConverter(
+                authoritiesConverter
+        );
 
         return authenticationConverter;
     }
