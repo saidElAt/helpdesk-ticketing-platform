@@ -4,6 +4,8 @@ import com.saidelatmioui.helpdesk.dto.ChangeTicketStatusRequest;
 import com.saidelatmioui.helpdesk.dto.CreateTicketRequest;
 import com.saidelatmioui.helpdesk.dto.TicketResponse;
 import com.saidelatmioui.helpdesk.dto.UpdateTicketRequest;
+import com.saidelatmioui.helpdesk.entity.TicketPriority;
+import com.saidelatmioui.helpdesk.entity.TicketStatus;
 import com.saidelatmioui.helpdesk.service.TicketService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -26,14 +28,41 @@ public class TicketController {
     }
 
     @GetMapping
-    public ResponseEntity<List<TicketResponse>> getAllTickets() {
+    public ResponseEntity<List<TicketResponse>>
+    searchTickets(
+            @RequestParam(required = false)
+            String search,
+
+            @RequestParam(required = false)
+            TicketStatus status,
+
+            @RequestParam(required = false)
+            TicketPriority priority,
+
+            @RequestParam(required = false)
+            Long categoryId,
+
+            @RequestParam(required = false)
+            Long assignedAgentId,
+
+            @RequestParam(required = false)
+            Long customerId
+    ) {
         return ResponseEntity.ok(
-                ticketService.getAllTickets()
+                ticketService.searchTickets(
+                        search,
+                        status,
+                        priority,
+                        categoryId,
+                        assignedAgentId,
+                        customerId
+                )
         );
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TicketResponse> getTicketById(
+    public ResponseEntity<TicketResponse>
+    getTicketById(
             @PathVariable Long id
     ) {
         return ResponseEntity.ok(
@@ -42,30 +71,47 @@ public class TicketController {
     }
 
     @PostMapping
-    public ResponseEntity<TicketResponse> createTicket(
-            @Valid @RequestBody CreateTicketRequest request
+    public ResponseEntity<TicketResponse>
+    createTicket(
+            @Valid
+            @RequestBody
+            CreateTicketRequest request
     ) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(
-                        ticketService.createTicket(request)
+                        ticketService.createTicket(
+                                request
+                        )
                 );
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<TicketResponse> updateTicket(
+    public ResponseEntity<TicketResponse>
+    updateTicket(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateTicketRequest request
+
+            @Valid
+            @RequestBody
+            UpdateTicketRequest request
     ) {
         return ResponseEntity.ok(
-                ticketService.updateTicket(id, request)
+                ticketService.updateTicket(
+                        id,
+                        request
+                )
         );
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<TicketResponse> changeTicketStatus(
+    public ResponseEntity<TicketResponse>
+    changeTicketStatus(
             @PathVariable Long id,
-            @Valid @RequestBody ChangeTicketStatusRequest request,
+
+            @Valid
+            @RequestBody
+            ChangeTicketStatusRequest request,
+
             Authentication authentication
     ) {
         return ResponseEntity.ok(
@@ -78,7 +124,8 @@ public class TicketController {
     }
 
     @PatchMapping("/{ticketId}/assign/{agentId}")
-    public ResponseEntity<TicketResponse> assignTicket(
+    public ResponseEntity<TicketResponse>
+    assignTicket(
             @PathVariable Long ticketId,
             @PathVariable Long agentId,
             Authentication authentication
@@ -98,6 +145,8 @@ public class TicketController {
     ) {
         ticketService.deleteTicket(id);
 
-        return ResponseEntity.noContent().build();
+        return ResponseEntity
+                .noContent()
+                .build();
     }
 }

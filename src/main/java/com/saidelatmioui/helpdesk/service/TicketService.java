@@ -6,12 +6,14 @@ import com.saidelatmioui.helpdesk.dto.TicketResponse;
 import com.saidelatmioui.helpdesk.dto.UpdateTicketRequest;
 import com.saidelatmioui.helpdesk.entity.Category;
 import com.saidelatmioui.helpdesk.entity.Ticket;
+import com.saidelatmioui.helpdesk.entity.TicketPriority;
 import com.saidelatmioui.helpdesk.entity.TicketStatus;
 import com.saidelatmioui.helpdesk.entity.User;
 import com.saidelatmioui.helpdesk.exception.BadRequestException;
 import com.saidelatmioui.helpdesk.exception.ResourceNotFoundException;
 import com.saidelatmioui.helpdesk.repository.CategoryRepository;
 import com.saidelatmioui.helpdesk.repository.TicketRepository;
+import com.saidelatmioui.helpdesk.repository.TicketSpecifications;
 import com.saidelatmioui.helpdesk.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,8 +44,24 @@ public class TicketService {
     }
 
     @Transactional(readOnly = true)
-    public List<TicketResponse> getAllTickets() {
-        return ticketRepository.findAll()
+    public List<TicketResponse> searchTickets(
+            String search,
+            TicketStatus status,
+            TicketPriority priority,
+            Long categoryId,
+            Long assignedAgentId,
+            Long customerId
+    ) {
+        return ticketRepository.findAll(
+                        TicketSpecifications.withFilters(
+                                search,
+                                status,
+                                priority,
+                                categoryId,
+                                assignedAgentId,
+                                customerId
+                        )
+                )
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -54,20 +72,28 @@ public class TicketService {
         return toResponse(findTicketById(id));
     }
 
-    public TicketResponse createTicket(CreateTicketRequest request) {
-        User customer = userRepository.findById(request.getCustomerId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Customer with ID "
-                                + request.getCustomerId()
-                                + " was not found"
-                ));
+    public TicketResponse createTicket(
+            CreateTicketRequest request
+    ) {
+        User customer = userRepository
+                .findById(request.getCustomerId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Customer with ID "
+                                        + request.getCustomerId()
+                                        + " was not found"
+                        )
+                );
 
-        Category category = categoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Category with ID "
-                                + request.getCategoryId()
-                                + " was not found"
-                ));
+        Category category = categoryRepository
+                .findById(request.getCategoryId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Category with ID "
+                                        + request.getCategoryId()
+                                        + " was not found"
+                        )
+                );
 
         if (!Boolean.TRUE.equals(category.getEnabled())) {
             throw new BadRequestException(
@@ -79,13 +105,16 @@ public class TicketService {
 
         Ticket ticket = new Ticket();
         ticket.setTitle(request.getTitle().trim());
-        ticket.setDescription(request.getDescription().trim());
+        ticket.setDescription(
+                request.getDescription().trim()
+        );
         ticket.setPriority(request.getPriority());
         ticket.setStatus(TicketStatus.OPEN);
         ticket.setCustomer(customer);
         ticket.setCategory(category);
 
-        Ticket savedTicket = ticketRepository.save(ticket);
+        Ticket savedTicket =
+                ticketRepository.save(ticket);
 
         historyService.recordStatusChange(
                 savedTicket,
@@ -104,10 +133,14 @@ public class TicketService {
         Ticket ticket = findTicketById(id);
 
         ticket.setTitle(request.getTitle().trim());
-        ticket.setDescription(request.getDescription().trim());
+        ticket.setDescription(
+                request.getDescription().trim()
+        );
         ticket.setPriority(request.getPriority());
 
-        return toResponse(ticketRepository.save(ticket));
+        return toResponse(
+                ticketRepository.save(ticket)
+        );
     }
 
     public TicketResponse changeTicketStatus(
@@ -116,6 +149,7 @@ public class TicketService {
             String changedByEmail
     ) {
         Ticket ticket = findTicketById(id);
+
         TicketStatus oldStatus = ticket.getStatus();
         TicketStatus newStatus = request.getStatus();
 
@@ -125,7 +159,8 @@ public class TicketService {
 
         ticket.setStatus(newStatus);
 
-        Ticket savedTicket = ticketRepository.save(ticket);
+        Ticket savedTicket =
+                ticketRepository.save(ticket);
 
         historyService.recordStatusChange(
                 savedTicket,
@@ -145,9 +180,13 @@ public class TicketService {
         Ticket ticket = findTicketById(ticketId);
 
         User agent = userRepository.findById(agentId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "User with ID " + agentId + " was not found"
-                ));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User with ID "
+                                        + agentId
+                                        + " was not found"
+                        )
+                );
 
         validateAgent(agent);
 
@@ -156,10 +195,13 @@ public class TicketService {
         TicketStatus oldStatus = ticket.getStatus();
 
         if (oldStatus == TicketStatus.OPEN) {
-            ticket.setStatus(TicketStatus.IN_PROGRESS);
+            ticket.setStatus(
+                    TicketStatus.IN_PROGRESS
+            );
         }
 
-        Ticket savedTicket = ticketRepository.save(ticket);
+        Ticket savedTicket =
+                ticketRepository.save(ticket);
 
         if (oldStatus != savedTicket.getStatus()) {
             historyService.recordStatusChange(
@@ -180,15 +222,22 @@ public class TicketService {
 
     private Ticket findTicketById(Long id) {
         return ticketRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Ticket with ID " + id + " was not found"
-                ));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Ticket with ID "
+                                        + id
+                                        + " was not found"
+                        )
+                );
     }
 
     private void validateAgent(User user) {
         if (user.getRole() == null
                 || user.getRole().getName() == null
-                || !AGENT_ROLE.equalsIgnoreCase(user.getRole().getName())) {
+                || !AGENT_ROLE.equalsIgnoreCase(
+                user.getRole().getName()
+        )) {
+
             throw new BadRequestException(
                     "User with ID "
                             + user.getId()
@@ -205,15 +254,24 @@ public class TicketService {
         }
     }
 
-    private TicketResponse toResponse(Ticket ticket) {
-        TicketResponse response = new TicketResponse();
+    private TicketResponse toResponse(
+            Ticket ticket
+    ) {
+        TicketResponse response =
+                new TicketResponse();
 
         response.setId(ticket.getId());
         response.setTitle(ticket.getTitle());
-        response.setDescription(ticket.getDescription());
+        response.setDescription(
+                ticket.getDescription()
+        );
         response.setStatus(ticket.getStatus());
-        response.setPriority(ticket.getPriority());
-        response.setCustomerId(ticket.getCustomer().getId());
+        response.setPriority(
+                ticket.getPriority()
+        );
+        response.setCustomerId(
+                ticket.getCustomer().getId()
+        );
 
         if (ticket.getAssignedAgent() != null) {
             response.setAssignedAgentId(
@@ -221,8 +279,12 @@ public class TicketService {
             );
         }
 
-        response.setCategoryId(ticket.getCategory().getId());
-        response.setCategoryName(ticket.getCategory().getName());
+        response.setCategoryId(
+                ticket.getCategory().getId()
+        );
+        response.setCategoryName(
+                ticket.getCategory().getName()
+        );
 
         return response;
     }

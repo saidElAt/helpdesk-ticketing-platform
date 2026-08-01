@@ -2,7 +2,7 @@
 @password = Helpdesk123!
 
 ### ============================================================================
-### LOGIN
+### AUTHENTICATION
 ### ============================================================================
 
 ### Login as CUSTOMER
@@ -49,54 +49,25 @@ Accept: application/json
 
 > {%
     client.global.set("adminToken", response.body.token);
-    client.global.set("adminId", response.body.userId);
 %}
 
 
-
 ### ============================================================================
-### CATEGORIES
+### CREATE TEST TICKET
 ### ============================================================================
-
-### Get Categories
-
-GET {{baseUrl}}/categories
-Authorization: Bearer {{customerToken}}
-Accept: application/json
-
-
-
-### ============================================================================
-### TICKETS
-### ============================================================================
-
-### Get all tickets
-
-GET {{baseUrl}}/tickets
-Authorization: Bearer {{customerToken}}
-Accept: application/json
-
-
-### Get ticket by id
-
-GET {{baseUrl}}/tickets/4
-Authorization: Bearer {{customerToken}}
-Accept: application/json
-
 
 ### Create ticket
-
 POST {{baseUrl}}/tickets
 Authorization: Bearer {{customerToken}}
 Content-Type: application/json
 Accept: application/json
 
 {
-  "title": "Unable to access customer account",
-  "description": "The account login page rejects the customer's valid credentials.",
+  "title": "Corporate VPN connection failure",
+  "description": "The customer cannot establish a connection to the corporate VPN.",
   "priority": "HIGH",
-  "customerId": 1,
-  "categoryId": 1
+  "customerId": {{customerId}},
+  "categoryId": 4
 }
 
 > {%
@@ -104,146 +75,102 @@ Accept: application/json
 %}
 
 
-### Create invalid ticket
+### ============================================================================
+### SEARCH AND FILTERING
+### ============================================================================
 
-POST {{baseUrl}}/tickets
+### List all tickets
+GET {{baseUrl}}/tickets
 Authorization: Bearer {{customerToken}}
-Content-Type: application/json
 Accept: application/json
 
-{
-  "title": "",
-  "description": "",
-  "priority": null,
-  "customerId": null,
-  "categoryId": null
-}
 
-
-### Update ticket
-
-PUT {{baseUrl}}/tickets/4
-Authorization: Bearer {{agentToken}}
-Content-Type: application/json
+### Search title and description
+GET {{baseUrl}}/tickets?search=VPN
+Authorization: Bearer {{customerToken}}
 Accept: application/json
 
-{
-  "title": "Updated account access issue",
-  "description": "Customer still cannot access the account after password reset.",
-  "priority": "MEDIUM"
-}
+
+### Filter by status
+GET {{baseUrl}}/tickets?status=OPEN
+Authorization: Bearer {{customerToken}}
+Accept: application/json
+
+
+### Filter by priority
+GET {{baseUrl}}/tickets?priority=HIGH
+Authorization: Bearer {{customerToken}}
+Accept: application/json
+
+
+### Filter by category
+GET {{baseUrl}}/tickets?categoryId=4
+Authorization: Bearer {{customerToken}}
+Accept: application/json
+
+
+### Filter by customer
+GET {{baseUrl}}/tickets?customerId={{customerId}}
+Authorization: Bearer {{customerToken}}
+Accept: application/json
+
+
+### Combined filters
+GET {{baseUrl}}/tickets?search=VPN&status=OPEN&priority=HIGH&categoryId=4&customerId={{customerId}}
+Authorization: Bearer {{customerToken}}
+Accept: application/json
 
 
 ### Assign ticket
-
-PATCH {{baseUrl}}/tickets/4/assign/2
+PATCH {{baseUrl}}/tickets/{{ticketId}}/assign/{{agentId}}
 Authorization: Bearer {{adminToken}}
 Accept: application/json
 
 
-### Change ticket status
-
-PATCH {{baseUrl}}/tickets/4/status
+### Filter by assigned agent
+GET {{baseUrl}}/tickets?assignedAgentId={{agentId}}
 Authorization: Bearer {{agentToken}}
-Content-Type: application/json
 Accept: application/json
-
-{
-  "status": "RESOLVED"
-}
-
-
-### Get ticket after changes
-
-GET {{baseUrl}}/tickets/4
-Authorization: Bearer {{customerToken}}
-Accept: application/json
-
 
 
 ### ============================================================================
-### COMMENTS
+### DASHBOARD AND REPORTING
 ### ============================================================================
 
-### Create customer comment
-
-POST {{baseUrl}}/tickets/4/comments
-Authorization: Bearer {{customerToken}}
-Content-Type: application/json
-Accept: application/json
-
-{
-  "authorId": 1,
-  "content": "I still cannot access my account after resetting the password."
-}
-
-
-### Create agent comment
-
-POST {{baseUrl}}/tickets/4/comments
+### Dashboard as AGENT
+GET {{baseUrl}}/dashboard/summary
 Authorization: Bearer {{agentToken}}
-Content-Type: application/json
 Accept: application/json
 
-{
-  "authorId": 2,
-  "content": "I am investigating the authentication logs and account configuration."
-}
 
-
-### Get comments
-
-GET {{baseUrl}}/tickets/4/comments
+### Dashboard as CUSTOMER
+### Expected: 403
+GET {{baseUrl}}/dashboard/summary
 Authorization: Bearer {{customerToken}}
 Accept: application/json
 
 
-### Create invalid comment
-
-POST {{baseUrl}}/tickets/4/comments
-Authorization: Bearer {{customerToken}}
-Content-Type: application/json
+### Ticket report as ADMIN
+GET {{baseUrl}}/reports/tickets/summary
+Authorization: Bearer {{adminToken}}
 Accept: application/json
 
-{
-  "authorId": 1,
-  "content": ""
-}
 
+### ============================================================================
+### OPENAPI DOCUMENTATION
+### ============================================================================
 
-### Create comment on non-existent ticket
-
-POST {{baseUrl}}/tickets/999/comments
-Authorization: Bearer {{customerToken}}
-Content-Type: application/json
-Accept: application/json
-
-{
-  "authorId": 1,
-  "content": "This should fail."
-}
-
+### Download OpenAPI document
+GET {{baseUrl}}/openapi.yaml
+Accept: application/yaml
 
 
 ### ============================================================================
 ### STATUS HISTORY
 ### ============================================================================
 
-### Change ticket to IN_PROGRESS
-
-PATCH {{baseUrl}}/tickets/4/status
-Authorization: Bearer {{agentToken}}
-Content-Type: application/json
-Accept: application/json
-
-{
-  "status": "IN_PROGRESS"
-}
-
-
-### Change ticket to RESOLVED
-
-PATCH {{baseUrl}}/tickets/4/status
+### Change status
+PATCH {{baseUrl}}/tickets/{{ticketId}}/status
 Authorization: Bearer {{agentToken}}
 Content-Type: application/json
 Accept: application/json
@@ -253,25 +180,16 @@ Accept: application/json
 }
 
 
-### Get ticket status history
-
-GET {{baseUrl}}/tickets/4/history
+### Get status history
+GET {{baseUrl}}/tickets/{{ticketId}}/history
 Authorization: Bearer {{customerToken}}
 Accept: application/json
 
 
-
 ### ============================================================================
-### DELETE
+### CLEANUP
 ### ============================================================================
 
-### Delete ticket
-
-DELETE {{baseUrl}}/tickets/4
-Authorization: Bearer {{adminToken}}
-
-
-### Delete non-existent ticket
-
-DELETE {{baseUrl}}/tickets/999
+### Delete test ticket
+DELETE {{baseUrl}}/tickets/{{ticketId}}
 Authorization: Bearer {{adminToken}}

@@ -1,0 +1,319 @@
+openapi: 3.0.3
+
+info:
+  title: Helpdesk Ticketing Platform API
+  version: 1.0.0
+  description: REST API for authentication, ticket management, comments, assignment, history, dashboard, and reporting.
+
+servers:
+  - url: http://localhost:8080
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/login:
+    post:
+      summary: Authenticate a user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication succeeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid request
+        '401':
+          description: Invalid credentials
+
+  /categories:
+    get:
+      summary: List enabled ticket categories
+      responses:
+        '200':
+          description: Categories returned successfully
+
+  /tickets:
+    get:
+      summary: Search and filter tickets
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/TicketStatus'
+        - name: priority
+          in: query
+          schema:
+            $ref: '#/components/schemas/TicketPriority'
+        - name: categoryId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: assignedAgentId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: customerId
+          in: query
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Tickets returned successfully
+
+    post:
+      summary: Create a ticket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTicketRequest'
+      responses:
+        '201':
+          description: Ticket created
+        '400':
+          description: Validation failed
+        '404':
+          description: Customer or category not found
+
+  /tickets/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+
+    get:
+      summary: Retrieve one ticket
+      responses:
+        '200':
+          description: Ticket returned
+        '404':
+          description: Ticket not found
+
+    put:
+      summary: Update ticket details
+      responses:
+        '200':
+          description: Ticket updated
+        '400':
+          description: Validation failed
+        '403':
+          description: Insufficient permissions
+        '404':
+          description: Ticket not found
+
+    delete:
+      summary: Delete a ticket
+      responses:
+        '204':
+          description: Ticket deleted
+        '403':
+          description: Administrator role required
+        '404':
+          description: Ticket not found
+
+  /tickets/{id}/status:
+    patch:
+      summary: Change ticket status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Status changed
+        '403':
+          description: Agent or administrator role required
+        '404':
+          description: Ticket not found
+
+  /tickets/{ticketId}/assign/{agentId}:
+    patch:
+      summary: Assign a ticket to an agent
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: agentId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Ticket assigned
+        '400':
+          description: User cannot be assigned
+        '403':
+          description: Administrator role required
+        '404':
+          description: Ticket or user not found
+
+  /tickets/{ticketId}/comments:
+    get:
+      summary: List comments for a ticket
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Comments returned
+        '404':
+          description: Ticket not found
+
+    post:
+      summary: Add a comment to a ticket
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '201':
+          description: Comment created
+        '400':
+          description: Validation failed
+        '404':
+          description: Ticket or user not found
+
+  /tickets/{ticketId}/history:
+    get:
+      summary: Retrieve ticket status history
+      parameters:
+        - name: ticketId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: History returned
+        '404':
+          description: Ticket not found
+
+  /dashboard/summary:
+    get:
+      summary: Retrieve dashboard ticket metrics
+      responses:
+        '200':
+          description: Dashboard metrics returned
+        '403':
+          description: Agent or administrator role required
+
+  /reports/tickets/summary:
+    get:
+      summary: Retrieve ticket summary report
+      responses:
+        '200':
+          description: Report returned
+        '403':
+          description: Agent or administrator role required
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        tokenType:
+          type: string
+        expiresIn:
+          type: integer
+          format: int64
+        userId:
+          type: integer
+          format: int64
+        email:
+          type: string
+        role:
+          type: string
+
+    CreateTicketRequest:
+      type: object
+      required:
+        - title
+        - description
+        - priority
+        - customerId
+        - categoryId
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          $ref: '#/components/schemas/TicketPriority'
+        customerId:
+          type: integer
+          format: int64
+        categoryId:
+          type: integer
+          format: int64
+
+    TicketStatus:
+      type: string
+      enum:
+        - OPEN
+        - IN_PROGRESS
+        - RESOLVED
+        - CLOSED
+
+    TicketPriority:
+      type: string
+      enum:
+        - LOW
+        - MEDIUM
+        - HIGH
+        - CRITICAL

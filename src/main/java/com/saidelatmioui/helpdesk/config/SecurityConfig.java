@@ -51,7 +51,9 @@ public class SecurityConfig {
                         )
                 )
 
-                .authenticationProvider(authenticationProvider)
+                .authenticationProvider(
+                        authenticationProvider
+                )
 
                 .authorizeHttpRequests(authorize -> authorize
 
@@ -60,7 +62,8 @@ public class SecurityConfig {
                         ).permitAll()
 
                         .requestMatchers(
-                                "/error"
+                                "/error",
+                                "/openapi.yaml"
                         ).permitAll()
 
                         .requestMatchers(
@@ -79,16 +82,17 @@ public class SecurityConfig {
 
                         .requestMatchers(
                                 HttpMethod.GET,
-                                "/tickets/*/comments"
+                                "/dashboard/**",
+                                "/reports/**"
                         ).hasAnyRole(
-                                "CUSTOMER",
                                 "AGENT",
                                 "ADMIN"
                         )
 
                         .requestMatchers(
-                                HttpMethod.POST,
-                                "/tickets/*/comments"
+                                HttpMethod.GET,
+                                "/tickets",
+                                "/tickets/**"
                         ).hasAnyRole(
                                 "CUSTOMER",
                                 "AGENT",
@@ -105,9 +109,8 @@ public class SecurityConfig {
                         )
 
                         .requestMatchers(
-                                HttpMethod.GET,
-                                "/tickets",
-                                "/tickets/**"
+                                HttpMethod.POST,
+                                "/tickets/*/comments"
                         ).hasAnyRole(
                                 "CUSTOMER",
                                 "AGENT",
@@ -147,19 +150,29 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
 
-                .exceptionHandling(exceptions -> exceptions
-                        .authenticationEntryPoint(authenticationEntryPoint)
-                        .accessDeniedHandler(accessDeniedHandler)
+                .exceptionHandling(exceptions ->
+                        exceptions
+                                .authenticationEntryPoint(
+                                        authenticationEntryPoint
+                                )
+                                .accessDeniedHandler(
+                                        accessDeniedHandler
+                                )
                 )
 
-                .oauth2ResourceServer(oauth2 -> oauth2
-                        .authenticationEntryPoint(authenticationEntryPoint)
-                        .accessDeniedHandler(accessDeniedHandler)
-                        .jwt(jwt -> jwt
-                                .jwtAuthenticationConverter(
-                                        jwtAuthenticationConverter
+                .oauth2ResourceServer(oauth2 ->
+                        oauth2
+                                .authenticationEntryPoint(
+                                        authenticationEntryPoint
                                 )
-                        )
+                                .accessDeniedHandler(
+                                        accessDeniedHandler
+                                )
+                                .jwt(jwt ->
+                                        jwt.jwtAuthenticationConverter(
+                                                jwtAuthenticationConverter
+                                        )
+                                )
                 );
 
         return http.build();
@@ -176,26 +189,34 @@ public class SecurityConfig {
             PasswordEncoder passwordEncoder
     ) {
         DaoAuthenticationProvider provider =
-                new DaoAuthenticationProvider(userDetailsService);
+                new DaoAuthenticationProvider(
+                        userDetailsService
+                );
 
-        provider.setPasswordEncoder(passwordEncoder);
+        provider.setPasswordEncoder(
+                passwordEncoder
+        );
 
         return provider;
     }
 
     @Bean
     public AuthenticationManager authenticationManager(
-            AuthenticationConfiguration authenticationConfiguration
+            AuthenticationConfiguration configuration
     ) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
+        return configuration
+                .getAuthenticationManager();
     }
 
     @Bean
     public SecretKey jwtSecretKey(
-            @Value("${app.jwt.secret}") String secret
+            @Value("${app.jwt.secret}")
+            String secret
     ) {
         byte[] secretBytes =
-                secret.getBytes(StandardCharsets.UTF_8);
+                secret.getBytes(
+                        StandardCharsets.UTF_8
+                );
 
         if (secretBytes.length < 32) {
             throw new IllegalStateException(
@@ -214,7 +235,9 @@ public class SecurityConfig {
             SecretKey jwtSecretKey
     ) {
         return new NimbusJwtEncoder(
-                new ImmutableSecret<>(jwtSecretKey)
+                new ImmutableSecret<>(
+                        jwtSecretKey
+                )
         );
     }
 
@@ -224,24 +247,34 @@ public class SecurityConfig {
     ) {
         return NimbusJwtDecoder
                 .withSecretKey(jwtSecretKey)
-                .macAlgorithm(MacAlgorithm.HS256)
+                .macAlgorithm(
+                        MacAlgorithm.HS256
+                )
                 .build();
     }
 
     @Bean
-    public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter authoritiesConverter =
+    public JwtAuthenticationConverter
+    jwtAuthenticationConverter() {
+
+        JwtGrantedAuthoritiesConverter
+                authoritiesConverter =
                 new JwtGrantedAuthoritiesConverter();
 
-        authoritiesConverter.setAuthoritiesClaimName("role");
-        authoritiesConverter.setAuthorityPrefix("ROLE_");
+        authoritiesConverter
+                .setAuthoritiesClaimName("role");
 
-        JwtAuthenticationConverter authenticationConverter =
+        authoritiesConverter
+                .setAuthorityPrefix("ROLE_");
+
+        JwtAuthenticationConverter
+                authenticationConverter =
                 new JwtAuthenticationConverter();
 
-        authenticationConverter.setJwtGrantedAuthoritiesConverter(
-                authoritiesConverter
-        );
+        authenticationConverter
+                .setJwtGrantedAuthoritiesConverter(
+                        authoritiesConverter
+                );
 
         return authenticationConverter;
     }
