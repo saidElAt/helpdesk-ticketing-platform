@@ -6,6 +6,7 @@ import {
 } from 'react-router-dom'
 import { AuthProvider } from './auth/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import CreateTicketPage from './pages/CreateTicketPage'
 import LoginPage from './pages/LoginPage'
 import TicketsPage from './pages/TicketsPage'
 import './App.css'
@@ -25,6 +26,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <TicketsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/tickets/new"
+            element={
+              <ProtectedRoute>
+                <CreateTicketPage />
               </ProtectedRoute>
             }
           />

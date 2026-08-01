@@ -20,6 +20,6 @@ public class CategoryService {
     }
 
     public List<Category> getEnabledCategories() {
-        return categoryRepository.findByEnabledTrueOrderByNameAsc();
+        return categoryRepository.findEnabledCategoriesForDisplay();
     }
 }
