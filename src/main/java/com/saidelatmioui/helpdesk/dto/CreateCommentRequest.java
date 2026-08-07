@@ -1,15 +1,9 @@
 package com.saidelatmioui.helpdesk.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 public class CreateCommentRequest {
-
-    @NotNull(message = "Author ID is required")
-    @Positive(message = "Author ID must be greater than zero")
-    private Long authorId;
 
     @NotBlank(message = "Comment content is required")
     @Size(
@@ -20,14 +14,6 @@ public class CreateCommentRequest {
     private String content;
 
     public CreateCommentRequest() {
-    }
-
-    public Long getAuthorId() {
-        return authorId;
-    }
-
-    public void setAuthorId(Long authorId) {
-        this.authorId = authorId;
     }
 
     public String getContent() {

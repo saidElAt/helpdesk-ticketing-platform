@@ -76,15 +76,16 @@ public class TicketService {
     }
 
     public TicketResponse createTicket(
-            CreateTicketRequest request
+            CreateTicketRequest request,
+            String authenticatedEmail
     ) {
         User customer = userRepository
-                .findById(request.getCustomerId())
+                .findByEmailIgnoreCase(
+                        authenticatedEmail
+                )
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Customer with ID "
-                                        + request.getCustomerId()
-                                        + " was not found"
+                                "Authenticated user was not found"
                         )
                 );
 
@@ -124,13 +125,8 @@ public class TicketService {
                 TicketStatus.OPEN
         );
 
-        ticket.setCustomer(
-                customer
-        );
-
-        ticket.setCategory(
-                category
-        );
+        ticket.setCustomer(customer);
+        ticket.setCategory(category);
 
         Ticket savedTicket =
                 ticketRepository.save(ticket);
@@ -195,9 +191,7 @@ public class TicketService {
                 request.getPriority()
         );
 
-        ticket.setCategory(
-                category
-        );
+        ticket.setCategory(category);
 
         return toResponse(
                 ticketRepository.save(ticket)
@@ -283,9 +277,7 @@ public class TicketService {
     }
 
     public void deleteTicket(Long id) {
-        Ticket ticket =
-                findTicketById(id);
-
+        Ticket ticket = findTicketById(id);
         ticketRepository.delete(ticket);
     }
 
@@ -382,22 +374,12 @@ public class TicketService {
         TicketResponse response =
                 new TicketResponse();
 
-        response.setId(
-                ticket.getId()
-        );
-
-        response.setTitle(
-                ticket.getTitle()
-        );
-
+        response.setId(ticket.getId());
+        response.setTitle(ticket.getTitle());
         response.setDescription(
                 ticket.getDescription()
         );
-
-        response.setStatus(
-                ticket.getStatus()
-        );
-
+        response.setStatus(ticket.getStatus());
         response.setPriority(
                 ticket.getPriority()
         );
@@ -408,11 +390,9 @@ public class TicketService {
         response.setCustomerId(
                 customer.getId()
         );
-
         response.setCustomerName(
                 buildFullName(customer)
         );
-
         response.setCustomerEmail(
                 customer.getEmail()
         );
@@ -424,11 +404,9 @@ public class TicketService {
             response.setAssignedAgentId(
                     assignedAgent.getId()
             );
-
             response.setAssignedAgentName(
                     buildFullName(assignedAgent)
             );
-
             response.setAssignedAgentEmail(
                     assignedAgent.getEmail()
             );
@@ -437,7 +415,6 @@ public class TicketService {
         response.setCategoryId(
                 ticket.getCategory().getId()
         );
-
         response.setCategoryName(
                 ticket.getCategory().getName()
         );

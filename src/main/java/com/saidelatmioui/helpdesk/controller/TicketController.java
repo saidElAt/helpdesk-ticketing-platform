@@ -75,13 +75,15 @@ public class TicketController {
     createTicket(
             @Valid
             @RequestBody
-            CreateTicketRequest request
+            CreateTicketRequest request,
+            Authentication authentication
     ) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(
                         ticketService.createTicket(
-                                request
+                                request,
+                                authentication.getName()
                         )
                 );
     }

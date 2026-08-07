@@ -6,6 +6,7 @@ import com.saidelatmioui.helpdesk.service.CommentService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,25 +24,33 @@ public class CommentController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CommentResponse>> getCommentsForTicket(
+    public ResponseEntity<List<CommentResponse>>
+    getCommentsForTicket(
             @PathVariable Long ticketId
     ) {
         return ResponseEntity.ok(
-                commentService.getCommentsForTicket(ticketId)
+                commentService.getCommentsForTicket(
+                        ticketId
+                )
         );
     }
 
     @PostMapping
-    public ResponseEntity<CommentResponse> createComment(
+    public ResponseEntity<CommentResponse>
+    createComment(
             @PathVariable Long ticketId,
-            @Valid @RequestBody CreateCommentRequest request
+            @Valid
+            @RequestBody
+            CreateCommentRequest request,
+            Authentication authentication
     ) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(
                         commentService.createComment(
                                 ticketId,
-                                request
+                                request,
+                                authentication.getName()
                         )
                 );
     }

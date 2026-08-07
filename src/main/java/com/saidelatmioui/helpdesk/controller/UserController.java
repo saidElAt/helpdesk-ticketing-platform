@@ -1,7 +1,10 @@
 package com.saidelatmioui.helpdesk.controller;
 
+import com.saidelatmioui.helpdesk.dto.UserSummaryResponse;
 import com.saidelatmioui.helpdesk.service.UserService;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/users")
@@ -20,5 +23,10 @@ public class UserController {
             @RequestParam String email
     ) {
         return userService.emailExists(email);
+    }
+
+    @GetMapping("/agents")
+    public List<UserSummaryResponse> getAgents() {
+        return userService.getEnabledAgents();
     }
 }

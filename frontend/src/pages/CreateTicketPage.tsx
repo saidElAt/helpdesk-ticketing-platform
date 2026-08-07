@@ -6,16 +6,11 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { getCategories } from '../api/categoryApi'
 import { createTicket } from '../api/ticketApi'
-import { useAuth } from '../auth/useAuth'
 import type { Category } from '../types/category'
 import type { TicketPriority } from '../types/ticket'
 
 export default function CreateTicketPage() {
   const navigate = useNavigate()
-
-  const {
-    session,
-  } = useAuth()
 
   const [categories, setCategories] =
     useState<Category[]>([])
@@ -83,13 +78,6 @@ export default function CreateTicketPage() {
   ) {
     event.preventDefault()
 
-    if (!session) {
-      setError(
-        'You must be signed in to create a ticket'
-      )
-      return
-    }
-
     if (!categoryId) {
       setError(
         'Please select a category'
@@ -105,7 +93,6 @@ export default function CreateTicketPage() {
         title: title.trim(),
         description: description.trim(),
         priority,
-        customerId: session.userId,
         categoryId: Number(categoryId),
       })
 
@@ -189,21 +176,10 @@ export default function CreateTicketPage() {
               )
             }
           >
-            <option value="LOW">
-              Low
-            </option>
-
-            <option value="MEDIUM">
-              Medium
-            </option>
-
-            <option value="HIGH">
-              High
-            </option>
-
-            <option value="CRITICAL">
-              Critical
-            </option>
+            <option value="LOW">Low</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="HIGH">High</option>
+            <option value="CRITICAL">Critical</option>
           </select>
 
           <label htmlFor="category">

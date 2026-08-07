@@ -3,6 +3,7 @@ import type { CreateTicketRequest } from '../types/createTicket'
 import type {
   Ticket,
   TicketFilters,
+  TicketStatus,
 } from '../types/ticket'
 import type { UpdateTicketRequest } from '../types/updateTicket'
 
@@ -81,10 +82,13 @@ export function getTicketById(
 export function createTicket(
   request: CreateTicketRequest
 ): Promise<Ticket> {
-  return apiFetch<Ticket>('/tickets', {
-    method: 'POST',
-    body: JSON.stringify(request),
-  })
+  return apiFetch<Ticket>(
+    '/tickets',
+    {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }
+  )
 }
 
 export function updateTicket(
@@ -96,6 +100,33 @@ export function updateTicket(
     {
       method: 'PUT',
       body: JSON.stringify(request),
+    }
+  )
+}
+
+export function changeTicketStatus(
+  ticketId: number,
+  status: TicketStatus
+): Promise<Ticket> {
+  return apiFetch<Ticket>(
+    `/tickets/${ticketId}/status`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({
+        status,
+      }),
+    }
+  )
+}
+
+export function assignTicket(
+  ticketId: number,
+  agentId: number
+): Promise<Ticket> {
+  return apiFetch<Ticket>(
+    `/tickets/${ticketId}/assign/${agentId}`,
+    {
+      method: 'PATCH',
     }
   )
 }

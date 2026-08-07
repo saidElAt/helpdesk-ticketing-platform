@@ -33,16 +33,23 @@ public class CommentService {
     }
 
     @Transactional(readOnly = true)
-    public List<CommentResponse> getCommentsForTicket(Long ticketId) {
+    public List<CommentResponse>
+    getCommentsForTicket(Long ticketId) {
 
-        Ticket ticket = ticketRepository.findById(ticketId)
+        Ticket ticket = ticketRepository
+                .findById(ticketId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Ticket with ID " + ticketId + " was not found"
+                                "Ticket with ID "
+                                        + ticketId
+                                        + " was not found"
                         )
                 );
 
-        return commentRepository.findByTicketIdOrderByCreatedAtAsc(ticket.getId())
+        return commentRepository
+                .findByTicketIdOrderByCreatedAtAsc(
+                        ticket.getId()
+                )
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -50,48 +57,77 @@ public class CommentService {
 
     public CommentResponse createComment(
             Long ticketId,
-            CreateCommentRequest request
+            CreateCommentRequest request,
+            String authenticatedEmail
     ) {
-
-        Ticket ticket = ticketRepository.findById(ticketId)
+        Ticket ticket = ticketRepository
+                .findById(ticketId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Ticket with ID " + ticketId + " was not found"
+                                "Ticket with ID "
+                                        + ticketId
+                                        + " was not found"
                         )
                 );
 
-        User author = userRepository.findById(request.getAuthorId())
+        User author = userRepository
+                .findByEmailIgnoreCase(
+                        authenticatedEmail
+                )
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "User with ID " + request.getAuthorId() + " was not found"
+                                "Authenticated user was not found"
                         )
                 );
 
         Comment comment = new Comment();
+
         comment.setTicket(ticket);
         comment.setAuthor(author);
-        comment.setContent(request.getContent().trim());
-
-        return toResponse(commentRepository.save(comment));
-    }
-
-    private CommentResponse toResponse(Comment comment) {
-
-        CommentResponse response = new CommentResponse();
-
-        response.setId(comment.getId());
-        response.setTicketId(comment.getTicket().getId());
-        response.setAuthorId(comment.getAuthor().getId());
-
-        response.setAuthorName(
-                comment.getAuthor().getFirstName()
-                        + " "
-                        + comment.getAuthor().getLastName()
+        comment.setContent(
+                request.getContent().trim()
         );
 
-        response.setContent(comment.getContent());
-        response.setCreatedAt(comment.getCreatedAt());
-        response.setUpdatedAt(comment.getUpdatedAt());
+        return toResponse(
+                commentRepository.save(comment)
+        );
+    }
+
+    private CommentResponse toResponse(
+            Comment comment
+    ) {
+        CommentResponse response =
+                new CommentResponse();
+
+        response.setId(comment.getId());
+
+        response.setTicketId(
+                comment.getTicket().getId()
+        );
+
+        response.setAuthorId(
+                comment.getAuthor().getId()
+        );
+
+        response.setAuthorName(
+                (
+                        comment.getAuthor().getFirstName()
+                                + " "
+                                + comment.getAuthor().getLastName()
+                ).trim()
+        );
+
+        response.setContent(
+                comment.getContent()
+        );
+
+        response.setCreatedAt(
+                comment.getCreatedAt()
+        );
+
+        response.setUpdatedAt(
+                comment.getUpdatedAt()
+        );
 
         return response;
     }
