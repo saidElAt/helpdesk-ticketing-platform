@@ -1,4 +1,7 @@
-import { useState, type FormEvent } from 'react'
+﻿import {
+  useState,
+  type FormEvent,
+} from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth/useAuth'
 
@@ -14,7 +17,9 @@ export default function LoginPage() {
     'Helpdesk123!'
   )
 
-  const [error, setError] = useState('')
+  const [error, setError] =
+    useState('')
+
   const [isSubmitting, setIsSubmitting] =
     useState(false)
 
@@ -32,7 +37,9 @@ export default function LoginPage() {
         password,
       })
 
-      navigate('/tickets')
+      navigate('/', {
+        replace: true,
+      })
     } catch (exception) {
       if (exception instanceof Error) {
         setError(exception.message)
@@ -91,7 +98,9 @@ export default function LoginPage() {
             autoComplete="current-password"
             value={password}
             onChange={(event) =>
-              setPassword(event.target.value)
+              setPassword(
+                event.target.value
+              )
             }
             required
           />
