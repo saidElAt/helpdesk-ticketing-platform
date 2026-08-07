@@ -93,12 +93,15 @@ public class TicketController {
 
             @Valid
             @RequestBody
-            UpdateTicketRequest request
+            UpdateTicketRequest request,
+
+            Authentication authentication
     ) {
         return ResponseEntity.ok(
                 ticketService.updateTicket(
                         id,
-                        request
+                        request,
+                        authentication.getName()
                 )
         );
     }

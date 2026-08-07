@@ -26,6 +26,9 @@ public class UpdateTicketRequest {
     @NotNull(message = "Priority is required")
     private TicketPriority priority;
 
+    @NotNull(message = "Category is required")
+    private Long categoryId;
+
     public UpdateTicketRequest() {
     }
 
@@ -51,5 +54,13 @@ public class UpdateTicketRequest {
 
     public void setPriority(TicketPriority priority) {
         this.priority = priority;
+    }
+
+    public Long getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(Long categoryId) {
+        this.categoryId = categoryId;
     }
 }

@@ -15,6 +15,7 @@ import com.saidelatmioui.helpdesk.repository.CategoryRepository;
 import com.saidelatmioui.helpdesk.repository.TicketRepository;
 import com.saidelatmioui.helpdesk.repository.TicketSpecifications;
 import com.saidelatmioui.helpdesk.repository.UserRepository;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +25,9 @@ import java.util.List;
 @Transactional
 public class TicketService {
 
+    private static final String CUSTOMER_ROLE = "CUSTOMER";
     private static final String AGENT_ROLE = "AGENT";
+    private static final String ADMIN_ROLE = "ADMIN";
 
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
@@ -104,14 +107,30 @@ public class TicketService {
         }
 
         Ticket ticket = new Ticket();
-        ticket.setTitle(request.getTitle().trim());
+
+        ticket.setTitle(
+                request.getTitle().trim()
+        );
+
         ticket.setDescription(
                 request.getDescription().trim()
         );
-        ticket.setPriority(request.getPriority());
-        ticket.setStatus(TicketStatus.OPEN);
-        ticket.setCustomer(customer);
-        ticket.setCategory(category);
+
+        ticket.setPriority(
+                request.getPriority()
+        );
+
+        ticket.setStatus(
+                TicketStatus.OPEN
+        );
+
+        ticket.setCustomer(
+                customer
+        );
+
+        ticket.setCategory(
+                category
+        );
 
         Ticket savedTicket =
                 ticketRepository.save(ticket);
@@ -128,15 +147,57 @@ public class TicketService {
 
     public TicketResponse updateTicket(
             Long id,
-            UpdateTicketRequest request
+            UpdateTicketRequest request,
+            String authenticatedEmail
     ) {
         Ticket ticket = findTicketById(id);
 
-        ticket.setTitle(request.getTitle().trim());
+        User authenticatedUser = userRepository
+                .findByEmailIgnoreCase(authenticatedEmail)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Authenticated user was not found"
+                        )
+                );
+
+        validateTicketUpdatePermission(
+                ticket,
+                authenticatedUser
+        );
+
+        Category category = categoryRepository
+                .findById(request.getCategoryId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Category with ID "
+                                        + request.getCategoryId()
+                                        + " was not found"
+                        )
+                );
+
+        if (!Boolean.TRUE.equals(category.getEnabled())) {
+            throw new BadRequestException(
+                    "Category with ID "
+                            + category.getId()
+                            + " is disabled"
+            );
+        }
+
+        ticket.setTitle(
+                request.getTitle().trim()
+        );
+
         ticket.setDescription(
                 request.getDescription().trim()
         );
-        ticket.setPriority(request.getPriority());
+
+        ticket.setPriority(
+                request.getPriority()
+        );
+
+        ticket.setCategory(
+                category
+        );
 
         return toResponse(
                 ticketRepository.save(ticket)
@@ -150,8 +211,11 @@ public class TicketService {
     ) {
         Ticket ticket = findTicketById(id);
 
-        TicketStatus oldStatus = ticket.getStatus();
-        TicketStatus newStatus = request.getStatus();
+        TicketStatus oldStatus =
+                ticket.getStatus();
+
+        TicketStatus newStatus =
+                request.getStatus();
 
         if (oldStatus == newStatus) {
             return toResponse(ticket);
@@ -177,9 +241,11 @@ public class TicketService {
             Long agentId,
             String changedByEmail
     ) {
-        Ticket ticket = findTicketById(ticketId);
+        Ticket ticket =
+                findTicketById(ticketId);
 
-        User agent = userRepository.findById(agentId)
+        User agent = userRepository
+                .findById(agentId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "User with ID "
@@ -192,7 +258,8 @@ public class TicketService {
 
         ticket.setAssignedAgent(agent);
 
-        TicketStatus oldStatus = ticket.getStatus();
+        TicketStatus oldStatus =
+                ticket.getStatus();
 
         if (oldStatus == TicketStatus.OPEN) {
             ticket.setStatus(
@@ -216,12 +283,15 @@ public class TicketService {
     }
 
     public void deleteTicket(Long id) {
-        Ticket ticket = findTicketById(id);
+        Ticket ticket =
+                findTicketById(id);
+
         ticketRepository.delete(ticket);
     }
 
     private Ticket findTicketById(Long id) {
-        return ticketRepository.findById(id)
+        return ticketRepository
+                .findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Ticket with ID "
@@ -231,13 +301,65 @@ public class TicketService {
                 );
     }
 
-    private void validateAgent(User user) {
-        if (user.getRole() == null
-                || user.getRole().getName() == null
-                || !AGENT_ROLE.equalsIgnoreCase(
-                user.getRole().getName()
-        )) {
+    private void validateTicketUpdatePermission(
+            Ticket ticket,
+            User authenticatedUser
+    ) {
+        if (
+                authenticatedUser.getRole() == null
+                        || authenticatedUser.getRole().getName() == null
+        ) {
+            throw new AccessDeniedException(
+                    "You do not have permission to edit this ticket"
+            );
+        }
 
+        String roleName =
+                authenticatedUser.getRole().getName();
+
+        if (
+                ADMIN_ROLE.equalsIgnoreCase(roleName)
+                        || AGENT_ROLE.equalsIgnoreCase(roleName)
+        ) {
+            return;
+        }
+
+        if (!CUSTOMER_ROLE.equalsIgnoreCase(roleName)) {
+            throw new AccessDeniedException(
+                    "You do not have permission to edit this ticket"
+            );
+        }
+
+        if (
+                ticket.getCustomer() == null
+                        || !ticket.getCustomer()
+                        .getId()
+                        .equals(authenticatedUser.getId())
+        ) {
+            throw new AccessDeniedException(
+                    "Customers may only edit their own tickets"
+            );
+        }
+
+        if (
+                ticket.getStatus() != TicketStatus.OPEN
+                        && ticket.getStatus()
+                        != TicketStatus.IN_PROGRESS
+        ) {
+            throw new AccessDeniedException(
+                    "Customers may only edit tickets that are OPEN or IN_PROGRESS"
+            );
+        }
+    }
+
+    private void validateAgent(User user) {
+        if (
+                user.getRole() == null
+                        || user.getRole().getName() == null
+                        || !AGENT_ROLE.equalsIgnoreCase(
+                        user.getRole().getName()
+                )
+        ) {
             throw new BadRequestException(
                     "User with ID "
                             + user.getId()
@@ -260,32 +382,74 @@ public class TicketService {
         TicketResponse response =
                 new TicketResponse();
 
-        response.setId(ticket.getId());
-        response.setTitle(ticket.getTitle());
+        response.setId(
+                ticket.getId()
+        );
+
+        response.setTitle(
+                ticket.getTitle()
+        );
+
         response.setDescription(
                 ticket.getDescription()
         );
-        response.setStatus(ticket.getStatus());
+
+        response.setStatus(
+                ticket.getStatus()
+        );
+
         response.setPriority(
                 ticket.getPriority()
         );
+
+        User customer =
+                ticket.getCustomer();
+
         response.setCustomerId(
-                ticket.getCustomer().getId()
+                customer.getId()
         );
 
-        if (ticket.getAssignedAgent() != null) {
+        response.setCustomerName(
+                buildFullName(customer)
+        );
+
+        response.setCustomerEmail(
+                customer.getEmail()
+        );
+
+        User assignedAgent =
+                ticket.getAssignedAgent();
+
+        if (assignedAgent != null) {
             response.setAssignedAgentId(
-                    ticket.getAssignedAgent().getId()
+                    assignedAgent.getId()
+            );
+
+            response.setAssignedAgentName(
+                    buildFullName(assignedAgent)
+            );
+
+            response.setAssignedAgentEmail(
+                    assignedAgent.getEmail()
             );
         }
 
         response.setCategoryId(
                 ticket.getCategory().getId()
         );
+
         response.setCategoryName(
                 ticket.getCategory().getName()
         );
 
         return response;
+    }
+
+    private String buildFullName(User user) {
+        return (
+                user.getFirstName()
+                        + " "
+                        + user.getLastName()
+        ).trim();
     }
 }

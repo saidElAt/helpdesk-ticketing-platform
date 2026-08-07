@@ -12,7 +12,12 @@ public class TicketResponse {
     private TicketPriority priority;
 
     private Long customerId;
+    private String customerName;
+    private String customerEmail;
+
     private Long assignedAgentId;
+    private String assignedAgentName;
+    private String assignedAgentEmail;
 
     private Long categoryId;
     private String categoryName;
@@ -68,12 +73,44 @@ public class TicketResponse {
         this.customerId = customerId;
     }
 
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public String getCustomerEmail() {
+        return customerEmail;
+    }
+
+    public void setCustomerEmail(String customerEmail) {
+        this.customerEmail = customerEmail;
+    }
+
     public Long getAssignedAgentId() {
         return assignedAgentId;
     }
 
     public void setAssignedAgentId(Long assignedAgentId) {
         this.assignedAgentId = assignedAgentId;
+    }
+
+    public String getAssignedAgentName() {
+        return assignedAgentName;
+    }
+
+    public void setAssignedAgentName(String assignedAgentName) {
+        this.assignedAgentName = assignedAgentName;
+    }
+
+    public String getAssignedAgentEmail() {
+        return assignedAgentEmail;
+    }
+
+    public void setAssignedAgentEmail(String assignedAgentEmail) {
+        this.assignedAgentEmail = assignedAgentEmail;
     }
 
     public Long getCategoryId() {

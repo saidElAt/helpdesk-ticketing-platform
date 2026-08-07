@@ -397,14 +397,22 @@ export default function TicketsPage() {
                       (ticket) => (
                         <tr key={ticket.id}>
                           <td>
-                            #{ticket.id}
+                            <Link
+                              className="ticket-id-link"
+                              to={`/tickets/${ticket.id}`}
+                            >
+                              #{ticket.id}
+                            </Link>
                           </td>
 
                           <td>
                             <div className="ticket-title-cell">
-                              <strong>
+                              <Link
+                                className="ticket-title-link"
+                                to={`/tickets/${ticket.id}`}
+                              >
                                 {ticket.title}
-                              </strong>
+                              </Link>
 
                               <span>
                                 {ticket.description}

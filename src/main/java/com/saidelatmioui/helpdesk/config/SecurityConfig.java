@@ -122,6 +122,7 @@ public class SecurityConfig {
                                 HttpMethod.PUT,
                                 "/tickets/**"
                         ).hasAnyRole(
+                                "CUSTOMER",
                                 "AGENT",
                                 "ADMIN"
                         )

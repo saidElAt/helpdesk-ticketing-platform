@@ -16,8 +16,15 @@ export interface Ticket {
   description: string
   status: TicketStatus
   priority: TicketPriority
+
   customerId: number
+  customerName: string
+  customerEmail: string
+
   assignedAgentId: number | null
+  assignedAgentName: string | null
+  assignedAgentEmail: string | null
+
   categoryId: number
   categoryName: string
 }

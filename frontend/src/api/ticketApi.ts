@@ -4,6 +4,7 @@ import type {
   Ticket,
   TicketFilters,
 } from '../types/ticket'
+import type { UpdateTicketRequest } from '../types/updateTicket'
 
 function buildQueryString(
   filters: TicketFilters
@@ -69,6 +70,14 @@ export function getTickets(
   )
 }
 
+export function getTicketById(
+  ticketId: number
+): Promise<Ticket> {
+  return apiFetch<Ticket>(
+    `/tickets/${ticketId}`
+  )
+}
+
 export function createTicket(
   request: CreateTicketRequest
 ): Promise<Ticket> {
@@ -76,4 +85,17 @@ export function createTicket(
     method: 'POST',
     body: JSON.stringify(request),
   })
+}
+
+export function updateTicket(
+  ticketId: number,
+  request: UpdateTicketRequest
+): Promise<Ticket> {
+  return apiFetch<Ticket>(
+    `/tickets/${ticketId}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(request),
+    }
+  )
 }
